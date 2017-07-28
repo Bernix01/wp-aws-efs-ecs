@@ -1,0 +1,81 @@
+FROM alpine:3.3
+MAINTAINER Redfenix
+
+# Install packages
+RUN echo '@community http://nl.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories && \
+apk --update --repository http://dl-3.alpinelinux.org/alpine/edge/main add \
+    freetype-dev \
+    libjpeg-turbo-dev \
+    libpng-dev \
+    libwebp-dev \
+    curl \
+	  php7@community \
+    php7-xsl@community \
+    php7-pdo_mysql@community \
+    php7-mcrypt@community \
+    php7-curl@community \
+    php7-json@community \
+    php7-fpm@community \
+    php7-mysqli@community \
+    php7-ctype@community \
+    php7-opcache@community \
+    php7-mbstring@community \
+    php7-zlib@community \
+    php7-gd@community \
+	  nginx@community \
+	  supervisor --repository http://nl.alpinelinux.org/alpine/edge/testing/
+
+# Small fixes and cleanup
+RUN ln -s /etc/php7 /etc/php && \
+    ln -s /usr/sbin/php-fpm7 /usr/bin/php-fpm && \
+    ln -s /usr/lib/php7 /usr/lib/php && \
+    rm -fr /var/cache/apk/*
+
+
+# Configure nginx
+COPY config/nginx.conf /etc/nginx/nginx.conf
+COPY config/default.conf /etc/nginx/conf.d/default.conf
+
+# Configure PHP-FPM
+COPY config/fpm-pool.conf /etc/php7/php-fpm.d/www.conf
+COPY config/php.ini /etc/php7/conf.d/zzz_custom.ini
+
+# Configure supervisord
+COPY config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+
+
+
+# Note: The NGINX_WEBROOT environment variable should be set to change 
+# the webroot so that this file is never served.
+COPY config/index.php /var/www/html/
+
+# Permissions
+RUN chown nobody:nobody -R /var/lib/nginx
+RUN chmod -R g+w /var/lib/nginx
+# /run/nginx/nginx.pid needs /run/nginx to exist
+# https://github.com/gliderlabs/docker-alpine/issues/185
+RUN mkdir -p /run/nginx
+RUN mkdir -p /var/log/supervisor
+
+# The following should be set or overwritten when the Docker container runs (ECS Task definition).
+# These are used by WordPress.
+# ENV DB_HOST
+# ENV DB_NAME
+# ENV DB_USER
+# ENV DB_PASSWORD
+ENV WP_ENV='development'
+ENV WP_HOME='https://www.example.com'
+ENV WP_SITEURL='https://www.example.com/'
+# Not used by WordPress, but used by the config-and-run.sh script to replace
+# the webroot in nginx.conf. It should point to where you have WordPress.
+ENV WP_WEBROOT='/var/www/html'
+
+# This runs supervisord as well as configures some things like nginx's webroot.
+RUN mkdir -p /usr/src/app
+WORKDIR /usr/src/app
+ADD config/config-and-run.sh /usr/src/app/config-and-run.sh
+RUN chmod +x /usr/src/app/config-and-run.sh
+STOPSIGNAL SIGTERM
+EXPOSE 80 443
+CMD ["ash","/usr/src/app/config-and-run.sh"]

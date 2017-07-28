@@ -1,0 +1,76 @@
+{
+  "containerDefinitions": [
+    {
+      "memory": 200,
+      "portMappings": [
+        {
+          "hostPort": 80,
+          "containerPort": 80,
+          "protocol": "tcp"
+        },
+        {
+          "hostPort": 443,
+          "containerPort": 443,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "mountPoints": [
+        {
+          "containerPath": "/var/www/html",
+          "sourceVolume": "efs"
+        }
+      ],
+      "environment":[
+        {
+          "name": "DB_HOST",
+          "value": "armar.cs7wptzvvb82.us-west-2.rds.amazonaws.com:3306"
+        },
+        {
+          "name": "DB_NAME",
+          "value": "vcAwk1ZDB2PXruf7Ea2"
+        },
+        {
+          "name": "DB_PASSWORD",
+          "value": "D1HDpXQ9pKkC03GZr7ti"
+        },
+        {
+          "name": "DB_USER",
+          "value": "trutzxc"
+        },
+        {
+          "name": "STATIC_WEBROOT",
+          "value": "/var/www/html/not-example"
+        },
+        {
+          "name": "WP_ENV",
+          "value": "dev"
+        },
+        {
+          "name": "WP_HOME",
+          "value": "https://www.example.ec"
+        },
+        {
+          "name": "WP_SITE_URL",
+          "value": "https://www.example.ec"
+        },
+        {
+          "name": "WP_WEBROOT",
+          "value": "/var/www/html/site/web"
+        }],
+      "name": "armar",
+      "image": "153167572846.dkr.ecr.us-west-2.amazonaws.com/armar:latest",
+      "cpu": 768,
+      "memoryReservation": 200
+    }
+  ],
+  "volumes": [
+    {
+      "host": {
+        "sourcePath": "/efs"
+      },
+      "name": "efs"
+    }
+  ],
+  "family": "example"
+}
